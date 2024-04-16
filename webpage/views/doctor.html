@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e9eff1;
+            margin: 0;
+            padding: 0;
+        }
+        .button, .search-button {
+            padding: 10px 20px;
+            margin: 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .search-button {
+            background-color: #4b6cb7;
+        }
+        .button:hover, .search-button:hover {
+            background-color: #45a049;
+        }
+        .container, .center {
+            padding: 20px;
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 200px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        td, th {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        tbody tr:nth-child(odd) {
+            background-color: #f2f2f2;
+        }
+        tbody tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <label for="doctorId">Doctor ID</label>
+        <input type="text" id="doctorId" placeholder="Enter Doctor ID">
+        <button  class="search-button" type="submit"  onclick="searchDoctor()">Search</button>
+    </div>
+    <div class="container">
+        <button class="button" onclick="location.href='dashboard.html'">Home</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Patient Name</th>
+                    <th>Gender</th>
+                    <th>DoB</th>
+                    <th>Phone Number</th>
+                    <th>Address</th>
+                    <th>OP_ID</th>
+                    <th>IP_ID</th>
+                </tr>
+            </thead>
+            <tbody id="patientTableBody">
+                <!-- Table rows will be inserted here using JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function searchDoctor() {
+            var doctorId = document.getElementById('doctorId').value;
+            const jsonObject = { doctorId: doctorId };
+            const jsonToSend = JSON.stringify(jsonObject);
+            fetch('http://localhost:3000/search_doctor', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: jsonToSend
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.found) {
+                    getDoctorData(doctorId);
+                } else {
+                    alert('Doctor not found.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while searching for the doctor.');
+            });
+        }
+
+        function getDoctorData(doctorId) {
+            console.log(doctorId);
+            fetch('http://localhost:3000/get_patient_info', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ Dr_ID: doctorId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('patientTableBody');
+                console.log(data);
+                tableBody.innerHTML = ''; // Clear existing rows
+
+                if (data.found && data.patients.length > 0) {
+                    data.patients.forEach(patient => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${patient[1] || ''}</td> <!-- Patient Name -->
+                            <td>${patient[2] || ''}</td> <!-- Gender -->
+                            <td>${patient[3] ? new Date(patient[3]).toLocaleDateString() : ''}</td> <!-- DoB -->
+                            <td>${patient[0] || ''}</td> <!-- Phone Number -->
+                            <td>${patient[5] || ''}</td> <!-- Address -->
+                            <td>${patient[6] || 'N'}</td> <!-- OP_ID -->
+                            <td>${patient[7] || 'N'}</td> <!-- IP_ID -->
+                        `;
+                    });
+                } else {
+                    // Handle no patients found
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `<td colspan="7">No patients found for this doctor.</td>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while fetching patient information.');
+            });
+        }
+
+    </script>
+</body>
+</html>

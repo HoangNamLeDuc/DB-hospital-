@@ -1,0 +1,176 @@
+<!-- patient_home.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Homepage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            align-items: center;
+        }
+        .add-button, .home-btn, .search-button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+            margin-right: 10px; /* Added margin for spacing */
+        }
+
+        .add-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .home-btn {
+            background-color: #999;
+            color: white;
+        }
+
+        .search-button {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .add-button:hover, .home-btn:hover, .search-button:hover {
+            background-color: #367c39;
+        }
+
+        .main-container {
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+
+        h3 {
+            font-size: 24px;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .search-button {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-container">
+            <div class="search-container">
+                <button  onclick = insertPatient() id="phoneSearch" class="search-input" placeholder="Search by phone"> Phone </button>
+                <button onclick = insertOP() id="OPidSearch" class="search-input" placeholder="Search by OP ID"> OP_ID </button>
+                <button onclick = insertIP() id="IPidSearch" class="search-input" placeholder="Search by IP ID"> IP_ID </button>
+                <button type="submit" onclick="searchPatient()" class="search-button">Search</button>
+                <button class="home-btn" onclick="location.href='dashboard.html'">Home</button>
+                <button class="add-button" onclick="location.href='add_patient.html'">Add Patient</button>
+            </div>
+    </div>
+
+    <script>
+        function searchPatient() {
+            
+            // var ipId = document.getElementById('IPidSearch').value;
+            // var opId = document.getElementById('OPidSearch').value;
+            // var phoneNumber = document.getElementById('phoneSearch').value;
+            var input  = document.getElementById('dynamicInput').value;
+            // Kiểm tra xem có ít nhất một trường được điền
+            if (!input) {
+                alert("Please enter at least one search criterion.");
+                return;
+            }
+
+            // Chỉ lấy giá trị đầu tiên được điền
+            let searchQuery = {
+                 input: input
+            };
+
+            fetch('http://localhost:3000/search_patient', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(searchQuery)
+            })  
+            .then(response => response.json())
+            .then(data => {
+                if (data && data[0] && data[0].PHONE_NUMBER) {
+                    // Redirect to the patient details page
+                    window.location.href = `http://localhost:3000/patient/${data[0].PHONE_NUMBER}`;
+                } else {
+                    console.log('No data found for the given query');
+                    // Handle the case where no data is found
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        };
+        
+        function insertPatient() {
+            createAndInsertInput();
+        }
+
+        function insertOP() {
+            createAndInsertInput('OP');
+        }
+
+        function insertIP() {
+            createAndInsertInput('IP');
+        }
+
+        function createAndInsertInput(prefix) {
+            // Create a text input element
+            var inputElement = document.createElement("input");
+            inputElement.type = "text";
+            inputElement.id = "dynamicInput";
+            inputElement.className = "search-input";
+            inputElement.placeholder = "Enter search criterion";
+
+            // Append the input element to the search container
+            var searchContainer = document.querySelector('.search-container');
+            searchContainer.appendChild(inputElement);
+
+            inputElement.focus();
+
+            // Optional: Remove the dynamically created input element after some time
+            setTimeout(function () {
+                searchContainer.removeChild(inputElement);
+            }, 5000); // Adjust the time as needed
+
+            inputElement.addEventListener('change', function () {
+                var searchText = inputElement.value;
+
+                // Check if the searchText has the specified prefix
+                if (prefix && !searchText.startsWith(prefix)) {
+                    alert("Invalid prefix. Please enter a valid search criterion.");
+                    // Redirect to the current page
+                    window.location.href = window.location.href;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
